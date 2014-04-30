@@ -3,6 +3,7 @@ title: "The Triangle of Doom in Ecology"
 author: "Russell Dinnage"
 date: "30/04/2014"
 output: html_document
+bibliography: "/home/din02g/Google Drive/References/Blog.bib"
 ---
 
 _Triangle man, triangle man_  
@@ -15,4 +16,12 @@ __They Might Be Giants__
 
 This is the first of probably many blog posts in which I muse about peculiarities of statistical practice in Ecology. Most ecologists have a very idiosyncratic, patch-work understanding of statistics, understandably largely based around the particular methods that they need for their work. This leads to some interesting statistical reading---with many highs, and many many lows. I will probably mainly focus on the lows, in an attempt to get a conversation started about what is the best statistical practice in certain areas that come up a lot in the literature. I should say, I am no exception to the general pattern in my own understanding of statistics---it can be quite incomplete on a number of fronts. That is why I welcome anyone who knows more about a particular statistical problem that I am discussing to correct me if I am horrendously (or even midly) wrong.
 
-Today I wish to talk about what I am calling the "Triangle of Doom", which pops up a lot in Ecology.
+Today I wish to talk about what I am calling the "Triangle of Doom", which pops up a lot in Ecology. This post was inspired by this recent article:
+
+Anacker, B. L., & Strauss, S. Y. (2014). The geography and ecology of plant speciation: range overlap and niche divergence in sister species. Proceedings. Biological Sciences / The Royal Society, 281(1778). doi:10.1098/rspb.2013.2980
+
+I should note that I am not trying to pick on this paper. It just happened to catch my eye because it is in an area I am interested in, it is in a high impact journal, and I admire the work of its authors. I am simply using this as an example to illustrate the general problem with what I am calling the Triangle of Doom. In fact, the authors deal with that sinister polygon in a more sophisticated manner than average.
+
+@Anacker2014 is a really interesting paper that looks at patterns of range overlap in plant sister species in relation to their evolutionary divergence. Surprisingly, this paper only contain a single (two-panel) figure.
+
+##Literature Cited
