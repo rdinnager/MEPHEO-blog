@@ -59,7 +59,7 @@ img<-colour_extract("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeac
 img_melt <- melt(img)
 img_rgb <- reshape(img_melt, timevar = "Var3", idvar = c("Var1", "Var2"), direction = "wide")
 ## get just the colours
-spider.cols<-unique(image.cols[,3:5])
+spider.cols<-unique(img_rgb[,3:5])
 colnames(spider.cols)<-c("Red","Green","Blue")
 
 ## plot a spinning 3D plot of the RGB values
@@ -87,8 +87,23 @@ That's better. There is one outlier pixel which is apparent in the above figure.
 
 ##What do we want in scientific figure colours?
 
-There is generally two types of palettes we might want to use in a scientific fi
+There is generally two types of palettes we might want to use in a scientific figure
 
+* A palette of contrasting colours, to effectively distinguish between different classes
+* A palette consisting of a colour gradient, to effectively represent differing levels of a continuous variable
+
+In this post, I am mostly going to play around with ideas about how to get palette of the first kind from an image of something such as our little spider friend above. As already mentioned Jo-Fai Chow has already made a function that uses one technique for doing this.
+
+```{r colour clustering, cache=TRUE}
+library(fastcluster)
+library(ape)
+## generate a distance matrix from all remaining colours (note: this creates a matrix with 38,715,600 elements which takes up about 300mb
+col_dists<-dist(img_rgb[,3:5])
+## use heirarchical scaling to generate a dendrogram of the colours (using UPGMA: "average")
+col_clust<-hclust(col_dists, "average")
+col_tree<-as.phylo(col_clust)
+
+```
 
 rasterImage(as.raster(img),0,0,100,88)
 
