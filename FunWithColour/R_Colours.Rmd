@@ -1,13 +1,22 @@
 ---
-title: "Fun with colour"
-author: "Russell Dinnage"
-date: "26/05/2014"
 output: 
   html_document:
-    self_contained: true
+    self_contained: false
 ---
 
-One of the most important things
+It used to be that I would make all my figures in black and white. It was just simpler that way, since most print journals charged extra money to print colour figures, and I did not have any money to spare. But with the move in science publishing from mainly print journals to mainly online (rich) content, colour is no longer a restriction for scientific figure. This is good news because colour can not only make your figures look great, they can help you pack more information into a scientific visualization. But the opposite side of this coin is that if colours are badly chosen, they can make your figure much much worse. This then leads to the question I used to not have to answer: what colours should I use?
+
+I have found several R packages really useful in this regard. `RColorBrewer` is a great package which has a small number of palettes to choose from, but all of them are pre-selected so that their colours will look good together. Recently I have become a fan of the`wesanderson` package by Karthik Ram, which makes available palettes drawn from the wonderfully quirky film canon of the director Wes Anderson. Want you figure to conjure the feeling of "Fantastic Mister Fox"? Or a my personal favourite: "Rushmore" (does that age me?). Just install `wesanderson` and grab the palette!
+
+But what if I want to get colours that are inspied by any arbitray image I like, or a non-arbitrary image that may be related to the subject of the figure? I started thinking about this when I had an exchange on twitter with Jo-fai Chow and Karthik Ram, e.g.
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="en"><p><a href="https://twitter.com/_inundata">@_inundata</a> <a href="https://twitter.com/ecologician">@ecologician</a> I&#39;ve been thinking abt a func that loads an img, extracts main colours and arranges them based on colour theory</p>&mdash; Jo-fai Chow (@matlabulous) <a href="https://twitter.com/matlabulous/statuses/469016511517302784">May 21, 2014</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+Soon thereafter, Jo-fai had already made a basic function, some of which I will steal below:
+
+<blockquote class="twitter-tweet" lang="en"><p><a href="https://twitter.com/ecologician">@ecologician</a> <a href="https://twitter.com/_inundata">@_inundata</a> here is my first attempt - see this gist <a href="http://t.co/2m1XtYTucc">http://t.co/2m1XtYTucc</a></p>&mdash; Jo-fai Chow (@matlabulous) <a href="https://twitter.com/matlabulous/statuses/469499552358473728">May 22, 2014</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 First a quick function to extract the colours from an online or local image. This code is based on the [`extract_colours()`](https://github.com/woobe/rPlotter/blob/master/R/extract_colours.R) function in the [`rPlotter`](https://github.com/woobe/rPlotter) package written by [Jo-fai Chow](https://github.com/woobe). It uses the [`EBImage`](http://www.bioconductor.org/packages/release/bioc/html/EBImage.html) package to load the image. It also requires the `reshape2` package.
 
@@ -29,16 +38,7 @@ colour_extract <- function(img_file = "http://developer.r-project.org/Logo/Rlogo
     }
   }
   
-  ## Melt
-  img_melt <- melt(img)
-  
-  ## Reshape
-  img_rgb <- reshape(img_melt, timevar = "Var3", idvar = c("Var1", "Var2"), direction = "wide")
-  
-  just_cols<-unique(img_rgb[,3:5])
-  colnames(just_cols)<-c("Red","Green","Blue")
-  
-  return(just_cols)
+  return(img)
 }
 
 ```
@@ -49,16 +49,54 @@ First thing, it would be cool to visualize the distribution of colours in an ima
 
 The plot requires the package `lattice`.
 
-```{r animate colours, fig.width=7, fig.height=6, fig.show='animate'}
+```{r Image colours in Red-Green-Blue space, fig.width=6, fig.height=5, fig.show='animate',cache=TRUE,interval=0.1}
 library(EBImage)
 library(reshape2)
 library(lattice)
 ## extract the colours!
-spider.cols<-colour_extract("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",rsize=100)
+img<-colour_extract("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",rsize=100)
+## reshape
+img_melt <- melt(img)
+img_rgb <- reshape(img_melt, timevar = "Var3", idvar = c("Var1", "Var2"), direction = "wide")
+## get just the colours
+spider.cols<-unique(image.cols[,3:5])
+colnames(spider.cols)<-c("Red","Green","Blue")
 
 ## plot a spinning 3D plot of the RGB values
 
-for (i in seq(0,360,by=10)) print(cloud(Blue~Red*Green,spider.cols,pch=19,col=rgb(spider.cols), screen=list(z=i,x=-60)))
+for (i in seq(6,360,by=6)) print(cloud(Blue~Red*Green, spider.cols, pch=19, col=rgb(spider.cols), screen=list(z=i,x=-60), perspective=TRUE, scales=list(draw=FALSE), xlab="", ylab="", zlab="", zoom=1, par.settings = list(axis.line = list(col = "transparent"))))
 
 ```
+
+This animation gives a nice 'fingerprint' of the images colours. Running down the middle&mdash;along the 1:1:1 line&mdash;are colours with equal red, green, and blue representation, which are colours with low saturation. These tend to be covered up by colour around the outside, so luckily they tend to be the less interesting colours. The brighter, higher saturation colours ring around the low saturation core, and tend to form 'wings' of dominant colours that loop out and along the light to dark axis (the 1:1:1 line). Here we can see one very large wing of red and orangish colours, and a slightly smaller blue wing. Peaking out the bottom is a smaller green wing. 
+
+The question now is how to choose colours from this spectrum that are useful for scientific figures. Well&mdash;to start&mdash; if you are plotting on a white background, you will want to get rid of very light colours. Since I often use `ggplot` and its default light grey background, I don't mind light colours. But I do want to get rid of low saturation colours, both because these are 'greyish' and don't stand out against a grey background, but also because they tend to be visually less appealing when you are plotting in full colour.
+
+One way to get rid of low saturation colours would be to remove any colours whose RGB values that were too close to the 1:1:1 line. But an easier way is to convert your RGB colours into HSV (Hue, Saturation, and Value) colours, and then remove any colours that are below a threshold saturation.
+
+```{r Remove low saturation colours,cache=TRUE}
+## convert colours to hsv scale
+hsv.col<-t(rgb2hsv(t(spider.cols), maxColorValue = 1))
+## remove colours with saturation less than 25%
+spider.cols.red<-spider.cols[hsv.col[,"s"]>0.25,]
+## plot the result
+cloud(Blue~Red*Green, spider.cols.red, pch=19, col=rgb(spider.cols.red), screen=list(z=70,x=-60),perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+```
+
+That's better. There is one outlier pixel which is apparent in the above figure. One very bright green out on the upper-left. That is the kind of thing that could fool a clustering algorithm. More on that in a minute.
+
+##What do we want in scientific figure colours?
+
+There is generally two types of palettes we might want to use in a scientific fi
+
+
+rasterImage(as.raster(img),0,0,100,88)
+
+plot(1:2, type='n',xaxt='n',yaxt='n',ylab='',xlab='',xlim=c(1,88),ylim=c(1,100),asp=1)
+plot.new()
+plot.window(xlim=c(1,88),ylim=c(1,100),asp=1)
+
+#Get the plot information so the image will fill the plot box, and draw it
+lim <- par()
+rasterImage(as.raster(img), lim$usr[1], lim$usr[3], lim$usr[1]+88, lim$usr[3]+100,FALSE)
 
