@@ -80,7 +80,7 @@ hsv.col<-t(rgb2hsv(t(spider.cols), maxColorValue = 1))
 ## remove colours with saturation less than 25%
 spider.cols.red<-spider.cols[hsv.col[,"s"]>0.25,]
 ## plot the result
-cloud(Blue~Red*Green, spider.cols.red, pch=19, col=rgb(spider.cols.red), screen=list(z=70,x=-60),perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+cloud(Blue~Red*Green, spider.cols.red, pch=19, col=rgb(spider.cols.red), screen=list(z=-45,x=-60),perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
 ```
 
 That's better. There is one outlier pixel which is apparent in the above figure. One very bright green out on the upper-left. That is the kind of thing that could fool a clustering algorithm. More on that in a minute.
