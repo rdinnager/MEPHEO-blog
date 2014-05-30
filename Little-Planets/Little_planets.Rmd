@@ -41,3 +41,4 @@ plot.default(0, type = "n", xlim = x.lim, ylim = y.lim, xlab = "",
 That is the line where the function sets up the plot before it draws the tree. Since the plot had already been setup, this line isn't needed, and if it is still there, it results in the plot being redrawn and losing the background image.
 
 What would make this plot even cooler would be to put little silouette [icons](http://descienceblog.tumblr.com/post/85222972145/icons) of the species at the tips. I will work on that.
+
