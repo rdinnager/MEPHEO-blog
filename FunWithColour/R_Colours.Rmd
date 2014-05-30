@@ -18,7 +18,7 @@ Soon thereafter, Jo-fai had already made a basic function, some of which I will 
 <blockquote class="twitter-tweet" lang="en"><p><a href="https://twitter.com/ecologician">@ecologician</a> <a href="https://twitter.com/_inundata">@_inundata</a> here is my first attempt - see this gist <a href="http://t.co/2m1XtYTucc">http://t.co/2m1XtYTucc</a></p>&mdash; Jo-fai Chow (@matlabulous) <a href="https://twitter.com/matlabulous/statuses/469499552358473728">May 22, 2014</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-First a quick function to extract the colours from an online or local image. This code is based on the [`extract_colours()`](https://github.com/woobe/rPlotter/blob/master/R/extract_colours.R) function in the [`rPlotter`](https://github.com/woobe/rPlotter) package written by [Jo-fai Chow](https://github.com/woobe). It uses the [`EBImage`](http://www.bioconductor.org/packages/release/bioc/html/EBImage.html) package to load the image. It also requires the `reshape2` package.
+First a quick function to extract the colours from an online or local image. This code is based on the [`extract_colours()`](https://github.com/woobe/rPlotter/blob/master/R/extract_colours.R) function in the [`rPlotter`](https://github.com/woobe/rPlotter) package written by [Jo-fai Chow](https://github.com/woobe). It uses the [`EBImage`](http://www.bioconductor.org/packages/release/bioc/html/EBImage.html) package to load the image.
 
 ```{r colour extract function}
 colour_extract <- function(img_file = "http://developer.r-project.org/Logo/Rlogo-1.png", rsize=100) {
@@ -43,11 +43,11 @@ colour_extract <- function(img_file = "http://developer.r-project.org/Logo/Rlogo
 
 ```
 
-First thing, it would be cool to visualize the distribution of colours in an image to get an idea of where the major colour gradients are. I will use an image of one of my favourite we images of one of my favourite animals:
+First thing, it would be cool to visualize the distribution of colours in an image to get an idea of where the major colour gradients are. I will use an image of one of my favourite images of one of my favourite animals:
 
 ![A posing Peacock Spider](http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg)
 
-The plot requires the package `lattice`.
+This code requires the packages `EBImage`, `reshape2` and `lattice`.
 
 ```{r Image colours in Red-Green-Blue space, fig.width=6, fig.height=5, fig.show='animate',cache=TRUE,interval=0.1}
 library(EBImage)
