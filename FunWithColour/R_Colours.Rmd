@@ -138,3 +138,14 @@ plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 ```
 
+```{r find colours, cache=TRUE, message=FALSE, warning=FALSE}
+library(picante)
+## number of colours to extract
+ncolours <- 8
+col_samp <- t(replicate(10000, as.numeric((rownames(spider.cols.red) %in% sample(rownames(spider.cols.red),ncolours)))))
+colnames(col_samp) <- rownames(spider.cols.red)
+col_mpd <- mpd(col_samp, as.matrix(col_dists))
+col_best <- colnames(col_samp)[col_samp[which.max(col_mpd),]==1]
+pie(rep(1, 8), col = col_best, main = "Palette based on Peacock Spider")
+```
+
