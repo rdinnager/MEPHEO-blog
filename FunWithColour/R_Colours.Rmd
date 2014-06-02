@@ -138,14 +138,34 @@ plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 ```
 
+```{r colourspace, cache=TRUE, message=FALSE,warning= FALSE}
+library(colorspace)
+spider.cols.LAB <- as(RGB(as.matrix(spider.cols.red)), "LAB")
+spider.cols.LAB <- as.data.frame(coords(spider.cols.LAB))
+cloud(L~A*B, spider.cols.LAB, pch=19, col=rownames(spider.cols.LAB), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+col_dists_LAB <- dist(spider.cols.LAB)
+col_tree_LAB <- nj(col_dists_LAB)
+col_tree_LAB$tip.label <- rep("_________", length(col_tree_LAB$tip.label))
+plot(col_tree_LAB, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red),
+     underscore=TRUE)
+plot(col_tree_LAB, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
+tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+
+spider.cols.LUV <- as(RGB(as.matrix(spider.cols.red)), "LUV")
+spider.cols.LUV <- as.data.frame(coords(spider.cols.LUV))
+cloud(L~U*V, spider.cols.LUV, pch=19, col=rownames(spider.cols.LUV), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+col_dists_LUV <- dist(spider.cols.LUV)
+```
+
+
 ```{r find colours, cache=TRUE, message=FALSE, warning=FALSE}
 library(picante)
 ## number of colours to extract
-ncolours <- 8
-col_samp <- t(replicate(10000, as.numeric((rownames(spider.cols.red) %in% sample(rownames(spider.cols.red),ncolours)))))
-colnames(col_samp) <- rownames(spider.cols.red)
-col_mpd <- mpd(col_samp, as.matrix(col_dists))
+ncolours <- 10
+col_samp <- t(replicate(10000, as.numeric((rownames(spider.cols.LUV) %in% sample(rownames(spider.cols.LUV),ncolours)))))
+colnames(col_samp) <- rownames(spider.cols.LUV)
+col_mpd <- mpd(col_samp, as.matrix(col_dists_LUV))
 col_best <- colnames(col_samp)[col_samp[which.max(col_mpd),]==1]
-pie(rep(1, 8), col = col_best, main = "Palette based on Peacock Spider")
+pie(rep(1, ncolours), col = col_best, main = "Palette based on Peacock Spider")
 ```
 
