@@ -1,7 +1,6 @@
 ---
 output: 
-  html_document:
-    self_contained: false
+  md_document
 bibliography: /home/din02g/Google Drive/References/AFD.bib
 ---
 
@@ -19,7 +18,9 @@ Soon thereafter, Jo-fai had already made a basic function, some of which I will 
 <blockquote class="twitter-tweet" lang="en"><p><a href="https://twitter.com/ecologician">@ecologician</a> <a href="https://twitter.com/_inundata">@_inundata</a> here is my first attempt - see this gist <a href="http://t.co/2m1XtYTucc">http://t.co/2m1XtYTucc</a></p>&mdash; Jo-fai Chow (@matlabulous) <a href="https://twitter.com/matlabulous/statuses/469499552358473728">May 22, 2014</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-Here is an example of using Jo-fai's function using one of my favourite images of one of my favourite animals, which I will use throughout this post:
+Since then, Jo-fai has posted a [blog post](http://blenditbayes.blogspot.co.uk/2014/05/towards-yet-another-r-colour-palette.html), describing his function and some other work. It's a great post, check it out!
+
+Here is an example of using Jo-fai's function using one of my favourite images of one of my favourite animals, which I will use throughout this post. The photo was taken by [Jurgen Otto](https://www.flickr.com/photos/59431731@N05/), a very amazing photographer.
 
 ![A posing Peacock Spider](http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg)
 
@@ -31,11 +32,11 @@ install_github("ramnathv/rblocks")
 install_github("woobe/rPlotter")
 library(rPlotter)
 ## extract 5 colours
-pal_spider1 <- extract_colours("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg")
+pal_spider1 <- extract_colours("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",6)
 ## plot extracted palette
 par(mfrow = c(1,2))
-pie(rep(1, 5), col = pal_spider1, main = "Palette based on Peacock Spider")
-hist(Nile, breaks = 5, col = pal_spider1, main = "Palette based on Peacock Spider")
+pie(rep(1, 6), col = pal_spider1, main = "Palette based on Peacock Spider", cex.main=0.8)
+hist(Nile, breaks = 7, col = pal_spider1, main = "Palette based on Peacock Spider", cex.main=0.8)
 ```
 
 Jo-Fai Chow's method uses k-means clustering to extract a colour palette. This works by splitting the pixels into _k_ groups based on their similarity in RGB colour space. Once it has found these _k_ clusters, `extract_colours` takes the average colour of each cluster, and returns these cluster averages as the palette. I think this is a great way to it, and offers up a number of ways to tweak the results. For one, there are literally hundreds of methods of performing clustering (k-means is one of the most popular). 
@@ -137,7 +138,8 @@ col_tree<-as.phylo(col_clust)
 ## plot tree!
 par(mfrow = c(1,1))
 col_tree$tip.label <- rep("_______", length(col_tree$tip.label))
-plot(col_tree, show.tip.label=TRUE, type ="fan", no.margin=FALSE, tip.color=rgb(spider.cols.red), underscore=TRUE, cex=1.5)
+par(bg="black")
+plot(col_tree, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red), underscore=TRUE, cex=3, edge.color="white")
 ```
 
 I think the heirarchical clustering causes issues because it forces the resulting distances to be ultrametric (every tree-tip is an equal distance from the tree-root), which probably does not represent colours very well. Instead, let's try neighbour-joining, which simply creates a tree by joining nearest neighbours. 
@@ -145,8 +147,8 @@ I think the heirarchical clustering causes issues because it forces the resultin
 ```{r colour clustering 2, cache=TRUE, warning=FALSE, message=FALSE}
 ## try using neighbour-joining: this takes much longer!
 col_tree2 <- nj(col_dists)
-col_tree2$tip.label <- rep("-----", length(col_tree2$tip.label))
-plot(col_tree2, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red))
+col_tree2$tip.label <- rep("_________", length(col_tree2$tip.label))
+plot(col_tree2, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red), underscore=TRUE)
 ## Another way of visualizing that
 plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
@@ -193,16 +195,15 @@ Now let's try it out! First I extract a largish palette using Jo-fai Chow's func
 
 ```{r examples, cache=TRUE, message=FALSE, warning=FALSE}
 ## For now my function is in my own fork of woobe's rPlotter repository
-library(devtools)
+library(devtools)  
 install_github("rdinnager/rPlotter")
 library(rPlotter)
 bigpal <- extract_colours("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg", 256, 200)
 ## get 5 best  10 colour palettes for MPD
 newpal <- mpd_select_colours(bigpal, sat.thresh = 0.25, dark.thresh = 0.1 , ncolours = 6, nreturn = 5)
 ## plot palettes
-#par(mfrow = c(5,1), mar=c(0,0,0,0))
 spider <- readImage("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg")
-split.screen(c(1,2))
+h <- split.screen(c(1,2))
 par(mar = c(0,0,0,0)) # set zero margins on all 4 sides
 plot(x = NULL, y = NULL, xlim = c(0,1500), ylim = c(0,1500), pch = '',
   	xaxt = 'n', yaxt = 'n', xlab = '', ylab = '', xaxs = 'i', yaxs = 'i',
@@ -210,7 +211,7 @@ plot(x = NULL, y = NULL, xlim = c(0,1500), ylim = c(0,1500), pch = '',
 rasterImage(spider, xleft = 0, ybottom = 0, xright = 1500, ytop = 1500) # plot jpeg
 screen(2)
 par(mar=c(0,0,0,0))
-split.screen(c(5,1))
+h <- split.screen(c(5,1))
 for (i in 1:length(newpal)) {
   screen(2+i)
   pie(rep(1, 6), col = newpal[[i]])
@@ -218,14 +219,16 @@ for (i in 1:length(newpal)) {
 close.screen(all.screens=TRUE)
 ```
 
-``````{r examples 2, cache=TRUE, message=FALSE, warning=FALSE}
+Here are a few more examples, starting with a photo taken (by my wife: Anna Simonsen) during my field work in the Kimberley. And then something a bit more pop culturey :).
+
+``````{r examples 2, cache=TRUE, message=FALSE, warning=FALSE, echo=FALSE}
 bigpal <- extract_colours("http://csironewsblog.files.wordpress.com/2013/04/helicopter.jpg", 256, 200)
 ## get 5 best  10 colour palettes for MPD
 newpal <- mpd_select_colours(bigpal, sat.thresh = 0.25, dark.thresh = 0.1 , ncolours = 6, nreturn = 5)
 ## plot palettes
 #par(mfrow = c(5,1), mar=c(0,0,0,0))
 kimberley <- readImage("http://csironewsblog.files.wordpress.com/2013/04/helicopter.jpg")
-split.screen(c(1,2))
+h <- split.screen(c(1,2))
 par(mar = c(0,0,0,0)) # set zero margins on all 4 sides
 plot(x = NULL, y = NULL, xlim = c(0,2400), ylim = c(0,1600), pch = '',
     xaxt = 'n', yaxt = 'n', xlab = '', ylab = '', xaxs = 'i', yaxs = 'i',
@@ -233,7 +236,26 @@ plot(x = NULL, y = NULL, xlim = c(0,2400), ylim = c(0,1600), pch = '',
 rasterImage(kimberley, xleft = 0, ybottom = 0, xright = 2400, ytop = 1600) # plot jpeg
 screen(2)
 par(mar=c(0,0,0,0))
-split.screen(c(5,1))
+h <- split.screen(c(5,1))
+for (i in 1:length(newpal)) {
+  screen(2+i)
+  pie(rep(1, 6), col = newpal[[i]])
+}
+close.screen(all.screens=TRUE)
+bigpal <- extract_colours("http://img3.wikia.nocookie.net/__cb20131109052340/disney/images/0/02/My_Neighbor_Totoro_-_Tonari_no_Totoro_%28Movie_Poster%29.jpg", 256, 200)
+newpal <- mpd_select_colours(bigpal, sat.thresh = 0.25, dark.thresh = 0.1 , ncolours = 6, nreturn = 5)
+## plot palettes
+#par(mfrow = c(5,1), mar=c(0,0,0,0))
+totoro <- readImage("http://img3.wikia.nocookie.net/__cb20131109052340/disney/images/0/02/My_Neighbor_Totoro_-_Tonari_no_Totoro_%28Movie_Poster%29.jpg")
+h <- split.screen(c(1,2))
+par(mar = c(0,0,0,0)) # set zero margins on all 4 sides
+plot(x = NULL, y = NULL, xlim = c(0,300), ylim = c(0,421), pch = '',
+    xaxt = 'n', yaxt = 'n', xlab = '', ylab = '', xaxs = 'i', yaxs = 'i',
+  	bty = 'n', asp=1) # plot empty figure
+rasterImage(totoro, xleft = 0, ybottom = 0, xright = 300, ytop = 421) # plot jpeg
+screen(2)
+par(mar=c(0,0,0,0))
+h <- split.screen(c(5,1))
 for (i in 1:length(newpal)) {
   screen(2+i)
   pie(rep(1, 6), col = newpal[[i]])
@@ -244,12 +266,17 @@ close.screen(all.screens=TRUE)
 ## Future Directions
 
 Some cool things to try next:
- * Take into account colour-blind friendly colours 
- * Maximize MPD using a more elegant approach. Perhaps numerical optimization. I have considered actually simulating competition amongst colours, treating them as species whose similarity in colour components determines their competition coefficients. Basically running a [Lotka-Volterra competition model](en.wikipedia.org/wiki/Competitive_Lotka–Volterra_equations) until the number of 'surviving' colours equals the desired number of colours. This should be pretty easy to do. Look for another post on this soon.
- * 
+
+* Take into account colour-blind friendly colours.
+* Maximize MPD using a more elegant approach. Perhaps numerical optimization. I have considered actually simulating competition amongst colours, treating them as species whose similarity in colour components determines their competition coefficients. Basically running a [Lotka-Volterra competition model](en.wikipedia.org/wiki/Competitive_Lotka–Volterra_equations) until the number of 'surviving' colours equals the desired number of colours. This should be pretty easy to do. Look for another post on this soon.
+* Utilize information on the abundance of different colours in the image. The MPD metric in ecology can be abundance-weighted, so that very abundant colours can contribute more to the mean distance than rarer colours.
+
+In part 2, I will look at ways to try and extract a gradient of colour from an image. 
+
+##References
 
 
-```{r find colours, eval=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+```{r find colours, eval=FALSE, cache=TRUE, message=FALSE, warning=FALSE, echo=FALSE}
 library(picante)
 ## number of colours to extract
 ncolours <- 10
@@ -260,7 +287,7 @@ col_best <- colnames(col_samp)[col_samp[which.max(col_mpd),]==1]
 pie(rep(1, ncolours), col = col_best, main = "Palette based on Peacock Spider")
 ```
 
-```{r testing, cache=TRUE, eval=FALSE}
+```{r testing, cache=TRUE, eval=FALSE, echo=FALSE}
 spider.cols.LUV <- as(RGB(as.matrix(spider.cols.red)), "LUV")
 spider.cols.LUV <- as.data.frame(coords(spider.cols.LUV))
 cloud(L~U*V, spider.cols.LUV, pch=19, col=rownames(spider.cols.LUV), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))

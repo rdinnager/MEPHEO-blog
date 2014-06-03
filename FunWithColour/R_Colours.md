@@ -1,4 +1,137 @@
-One of the most important things
+It used to be that I would make all my figures in black and white. It
+was just simpler that way, since most print journals charged extra money
+to print colour figures, and I did not have any money to spare. But with
+the move in science publishing from mainly print journals to mainly
+online (rich) content, colour is no longer a restriction for scientific
+figure. This is good news because colour can not only make your figures
+look great, they can help you pack more information into a scientific
+visualization. But the opposite side of this coin is that if colours are
+badly chosen, they can make your figure much much worse. This then leads
+to the question I used to not have to answer: what colours should I use?
+
+I have found several R packages really useful in this regard.
+`RColorBrewer` is a great package which has a small number of palettes
+to choose from, but all of them are pre-selected so that their colours
+will look good together. Recently I have become a fan of
+the`wesanderson` package by Karthik Ram, which makes available palettes
+drawn from the wonderfully quirky film canon of the director Wes
+Anderson. Want your figure to conjure the feeling of "Fantastic Mister
+Fox"? Or a my personal favourite: "Rushmore" (does that age me?). Just
+install `wesanderson` and grab the palette! Jo-Fai Chowalso has an
+excellent [blog
+post](http://blenditbayes.blogspot.co.uk/2014/05/towards-yet-another-r-colour-palette.html)
+with links to more interesting color packages, some of which I have not
+checked out yet.
+
+But what if I want to get colours that are inspied by any arbitrary
+image I like, or a non-arbitrary image that may be related to the
+subject of the figure? I started thinking about this when I had an
+exchange on twitter with Jo-fai Chow and Karthik Ram, e.g.
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="en"><p>
+<a href="https://twitter.com/_inundata">(<span
+class="citeproc-not-found"
+data-reference-id="_inundata">**???**</span>)</a>
+<a href="https://twitter.com/ecologician">(<span
+class="citeproc-not-found"
+data-reference-id="ecologician">**???**</span>)</a> I've been thinking
+abt a func that loads an img, extracts main colours and arranges them
+based on colour theory
+</p>
+— Jo-fai Chow ((<span class="citeproc-not-found"
+data-reference-id="matlabulous">**???**</span>))
+<a href="https://twitter.com/matlabulous/statuses/469016511517302784">May
+21, 2014</a>
+</blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+Soon thereafter, Jo-fai had already made a basic function, some of which
+I will steal below:
+
+<blockquote class="twitter-tweet" lang="en"><p>
+<a href="https://twitter.com/ecologician">(<span
+class="citeproc-not-found"
+data-reference-id="ecologician">**???**</span>)</a>
+<a href="https://twitter.com/_inundata">(<span
+class="citeproc-not-found"
+data-reference-id="_inundata">**???**</span>)</a> here is my first
+attempt - see this gist
+<a href="http://t.co/2m1XtYTucc">http://t.co/2m1XtYTucc</a>
+</p>
+— Jo-fai Chow ((<span class="citeproc-not-found"
+data-reference-id="matlabulous">**???**</span>))
+<a href="https://twitter.com/matlabulous/statuses/469499552358473728">May
+22, 2014</a>
+</blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+Since then, Jo-fai has posted a [blog
+post](http://blenditbayes.blogspot.co.uk/2014/05/towards-yet-another-r-colour-palette.html),
+describing his function and some other work. It's a great post, check it
+out!
+
+Here is an example of using Jo-fai's function using one of my favourite
+images of one of my favourite animals, which I will use throughout this
+post. The photo was taken by [Jurgen
+Otto](https://www.flickr.com/photos/59431731@N05/), a very amazing
+photographer.
+
+![A posing Peacock
+Spider](http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg)
+
+    ## install Jo-Fai Chow's package
+    require(devtools)
+    install_github("ramnathv/rblocks")
+    install_github("woobe/rPlotter")
+    library(rPlotter)
+    ## extract 5 colours
+    pal_spider1 <- extract_colours("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",6)
+    ## plot extracted palette
+    par(mfrow = c(1,2))
+    pie(rep(1, 6), col = pal_spider1, main = "Palette based on Peacock Spider", cex.main=0.8)
+    hist(Nile, breaks = 7, col = pal_spider1, main = "Palette based on Peacock Spider", cex.main=0.8)
+
+![plot of chunk
+rPlotter](R_Colours_files/figure-markdown_strict/rPlotter.png)
+
+Jo-Fai Chow's method uses k-means clustering to extract a colour
+palette. This works by splitting the pixels into *k* groups based on
+their similarity in RGB colour space. Once it has found these *k*
+clusters, `extract_colours` takes the average colour of each cluster,
+and returns these cluster averages as the palette. I think this is a
+great way to it, and offers up a number of ways to tweak the results.
+For one, there are literally hundreds of methods of performing
+clustering (k-means is one of the most popular).
+
+However, once we extract colours, how can we select colours useful for
+scientific figures?
+
+What do we want in scientific figure colours?
+---------------------------------------------
+
+There is generally two types of palettes we might want to use in a
+scientific figure
+
+-   A palette of contrasting colours, to effectively distinguish between
+    different classes
+-   A palette consisting of a colour gradient, to effectively represent
+    differing levels of a continuous variable
+
+In this post, I am mostly going to play around with ideas about how to
+get palette of the first kind from an image of something such as our
+little spider friend above. The second kind I will cover in a subsequent
+blog post.
+
+I do this by applying ideas from community ecology to colours. The basic
+idea is to treat the components of colour (such as Red, Green, and Blue
+if we are using RGB colorspace) as traits that each pixel in an image
+has (think of the pixels as species in the community of the image). We
+then want to assembly a reduced community of pixels which maximizes the
+average distance in their colour traits. Ecologists often measure the
+traits of organisms and ask whether communities are dispersed in
+trait-space or clustered, and so have developed a number of metrics to
+measure trait dispersion. Here, I simply apply one of these metrics to
+colour palettes, and maximize it in a simple brute-force way.
 
 First a quick function to extract the colours from an online or local
 image. This code is based on the
@@ -6,9 +139,9 @@ image. This code is based on the
 function in the [`rPlotter`](https://github.com/woobe/rPlotter) package
 written by [Jo-fai Chow](https://github.com/woobe). It uses the
 [`EBImage`](http://www.bioconductor.org/packages/release/bioc/html/EBImage.html)
-package to load the image. It also requires the `reshape2` package.
+package to load the image.
 
-    colour_extract <- function(img_file = "http://developer.r-project.org/Logo/Rlogo-1.png", rsize=100) {
+    colour_extracter <- function(img_file = "http://developer.r-project.org/Logo/Rlogo-1.png", rsize=100) {
       
       require(EBImage)
       require(reshape2)
@@ -25,39 +158,275 @@ package to load the image. It also requires the `reshape2` package.
         }
       }
       
-      ## Melt
-      img_melt <- melt(img)
-      
-      ## Reshape
-      img_rgb <- reshape(img_melt, timevar = "Var3", idvar = c("Var1", "Var2"), direction = "wide")
-      
-      just_cols<-unique(img_rgb[,3:5])
-      colnames(just_cols)<-c("Red","Green","Blue")
-      
-      return(just_cols)
+      return(img)
     }
 
 First thing, it would be cool to visualize the distribution of colours
-in an image to get an idea of where the major colour gradients are. I
-will use an image of one of my favourite we images of one of my
-favourite animals:
+in an image to get an idea of where the major colour gradients are.
 
-![A posing Peacock
-Spider](http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg)
-
-The plot requires the package `lattice`.
+This code requires the packages `EBImage`, `reshape2` and `lattice`.
 
     library(EBImage)
     library(reshape2)
     library(lattice)
     ## extract the colours!
-    spider.cols<-colour_extract("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",rsize=100)
-
+    img<-colour_extracter("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg",rsize=100)
+    ## reshape
+    img_melt <- melt(img)
+    img_rgb <- reshape(img_melt, timevar = "Var3", idvar = c("Var1", "Var2"), direction = "wide")
+    ## get just the colours
+    spider.cols<-img_rgb[,3:5]
+    rgbs <- rgb(spider.cols)
+    ## save abundances for later
+    rgb_dat <- table(rgbs)
+    ## get rid of visually indistinguishable colours
+    spider.cols <- as.data.frame(t(col2rgb(names(rgb_dat))/255))
+    colnames(spider.cols) <- c("Red","Green","Blue")
+    rownames(spider.cols) <- names(rgb_dat)
     ## plot a spinning 3D plot of the RGB values
 
-    for (i in seq(0,360,by=10)) print(cloud(Blue~Red*Green,spider.cols,pch=19,col=rgb(spider.cols), screen=list(z=i,x=-60)))
+    for (i in seq(6,360,by=6)) print(cloud(Blue~Red*Green, spider.cols, pch=19, col=rgb(spider.cols), screen=list(z=i,x=-60), perspective=TRUE, scales=list(draw=FALSE), xlab="", ylab="", zlab="", zoom=1, par.settings = list(axis.line = list(col = "transparent"))))
 
 <video   controls="controls" loop="loop">
-<source src="R_Colours_files/figure-markdown_strict/animate_colours.ogg" />video
-of chunk animate colours
+<source src="R_Colours_files/figure-markdown_strict/Image_colours_in_Red-Green-Blue_space.ogg" />video
+of chunk Image colours in Red-Green-Blue space
 </video>
+
+
+This animation gives a nice 'fingerprint' of the images colours. Running
+down the middle—along the 1:1:1 line—are colours with equal red, green,
+and blue representation, which are colours with low saturation. These
+tend to be covered up by colour around the outside, so luckily they tend
+to be the less interesting colours. The brighter, higher saturation
+colours ring around the low saturation core, and tend to form 'wings' of
+dominant colours that loop out and along the light to dark axis (the
+1:1:1 line). Here we can see one very large wing of red and orangish
+colours, and a slightly smaller blue wing. Peaking out the bottom is a
+smaller green wing.
+
+The question now is how to choose colours from this spectrum that are
+visually distinctive for figures. Well—to start— if you are plotting on
+a white background, you will want to get rid of very light colours.
+Since I often use `ggplot` and its default light grey background, I
+don't mind light colours. But I do want to get rid of low saturation
+colours, both because these are 'greyish' and don't stand out against a
+grey background, but also because they tend to be visually less
+appealing when you are plotting in full colour.
+
+One way to get rid of low saturation colours would be to remove any
+colours whose RGB values that were too close to the 1:1:1 line. But an
+easier way is to convert your RGB colours into HSV (Hue, Saturation, and
+Value) colours, and then remove any colours that are below a threshold
+saturation.
+
+    ## convert colours to hsv scale
+    hsv.col<-t(rgb2hsv(t(spider.cols), maxColorValue = 1))
+    ## remove colours with saturation less than 25%
+    spider.cols.red<-spider.cols[hsv.col[,"s"]>0.25,]
+    ## plot the result
+    cloud(Blue~Red*Green, spider.cols.red, pch=19, col=rgb(spider.cols.red), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+
+![plot of chunk Remove low saturation
+colours](R_Colours_files/figure-markdown_strict/Remove_low_saturation_colours.png)
+
+That's better. Notice the one outlier pixel which is apparent in the
+above figure: one very bright green out on the upper-left.
+
+Now, I will apply a technique used in ecology to visualize the
+similarity of organisms in their traits. First we calculate the distance
+of species in trait-space (in this case, the distance of the colours in
+colour-space), and then cluster the species (or colours) into a
+tree-like structure. Think of it as a phylogenetic tree of colours!
+First I will try an heirarchical clustering method known as UPGMA, a
+fast method of tree construction.
+
+    library(fastcluster)
+    library(ape)
+    ## generate a euclidean distance matrix from all remaining colours (note: with rsize = 100, this creates a matrix with 38,715,600 elements which takes up about 300mb, be careful if using even greater rsize!)
+    col_dists<-dist(spider.cols.red)
+    ## use heirarchical scaling to generate a dendrogram of the colours (using UPGMA: "average")
+    col_clust<-hclust(col_dists, "average")
+    ## convert dendrogram into a phylogenetic tree 
+    col_tree<-as.phylo(col_clust)
+    ## plot tree!
+    par(mfrow = c(1,1))
+    col_tree$tip.label <- rep("_______", length(col_tree$tip.label))
+    plot(col_tree, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red), underscore=TRUE, cex=1.8)
+
+![plot of chunk colour clustering
+1](R_Colours_files/figure-markdown_strict/colour_clustering_1.png)
+
+I think the heirarchical clustering causes issues because it forces the
+resulting distances to be ultrametric (every tree-tip is an equal
+distance from the tree-root), which probably does not represent colours
+very well. Instead, let's try neighbour-joining, which simply creates a
+tree by joining nearest neighbours.
+
+    ## try using neighbour-joining: this takes much longer!
+    col_tree2 <- nj(col_dists)
+    col_tree2$tip.label <- rep("_________", length(col_tree2$tip.label))
+    plot(col_tree2, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red), underscore=TRUE)
+
+![plot of chunk colour clustering
+2](R_Colours_files/figure-markdown_strict/colour_clustering_21.png)
+
+    ## Another way of visualizing that
+    plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
+    tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+
+![plot of chunk colour clustering
+2](R_Colours_files/figure-markdown_strict/colour_clustering_22.png)
+
+Looks good! But we immediately start to see a problem by visualizing the
+colours like this. For one, the blueish colours have large
+branch-lengths, yet they appear to all be very similar, at least to my
+eye. It turns out that human colour perception is quite biased with
+regards to certain hues. For example blue hues are difficult to
+distinguish by eye, such that some colours that are very different in
+RGB space can appear quite similar. On the other hand, red and orangish
+hues can appear quite different, despite being very close in RGB space.
+To account for this, other colorspaces have been developed which attempt
+to get closer to how humans percieve colours. An example of this is the
+[CIELAB](http://en.wikipedia.org/wiki/Lab_color_space) colorspace, or
+L\*A\*B\* for short. This space consists of three dimensions. The first,
+known as **L\*** corresponds to luminosity, and is a very good measure
+of how humans perceive light vs. dark. **L\*** ranges between 0 and 100,
+with high values being light colours. The other two elements are **a\***
+and **b\***, which are the position of the colour on the red/magenta to
+green scale (-100 to 100), and the blue to yellow scale (-100 to 100),
+respectively. I therefore decided to transform the image's colours to
+CIELAB space using the `colorspace` package before analyzing further:
+
+    library(colorspace)
+    spider.cols.LAB <- as(RGB(as.matrix(spider.cols.red)), "LAB")
+    spider.cols.LAB <- as.data.frame(coords(spider.cols.LAB))
+    cloud(L~A*B, spider.cols.LAB, pch=19, col=rownames(spider.cols.LAB), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+
+![plot of chunk
+colourspace](R_Colours_files/figure-markdown_strict/colourspace1.png)
+
+    col_dists_LAB <- dist(spider.cols.LAB)
+    col_tree_LAB <- nj(col_dists_LAB)
+    col_tree_LAB$tip.label <- rep("_________", length(col_tree_LAB$tip.label))
+    plot(col_tree_LAB, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red),
+         underscore=TRUE)
+
+![plot of chunk
+colourspace](R_Colours_files/figure-markdown_strict/colourspace2.png)
+
+    ## compare with RGB
+    par(mfrow = c(1,2), mar=c(2,2,2,2))
+    plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=FALSE, main = "RGB")
+    tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+    plot(col_tree_LAB, show.tip.label=FALSE, type ="unrooted", no.margin=FALSE, main = "L*A*B*")
+    tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+
+![plot of chunk
+colourspace](R_Colours_files/figure-markdown_strict/colourspace3.png)
+
+    par(mfrow = c(1,1))
+
+In the new colorspace, we can see that the blue hues now take up a much
+smaller volume, reflecting human's poor ability to distinguish these
+hues. On the other hand the red and orange hues have expanded to fill
+more space.
+
+Putting all of this together, I put together a function to select
+visually distinctive colours from a palette of colours. It does the
+following:
+
+1.  Get rid of colours of low saturation and/or low or high luminosity.
+2.  Convert colours to CIELAB space to align them more with human
+    perception
+3.  Maximize the mean distance between a set of colours taken from the
+    full palette. I call this measure Mean Perceptual Distance (MPD),
+    which is based on Mean Phylogenetic Distance (Webb 2000) from
+    ecology.
+
+Mean Phylogenetic Distance is simply the mean pairwise distance between
+all species in a community, the distance being measure by how far apart
+two species are on a phylogenetic tree. Here, I simply replace the
+phylogenetic distances with the Euclidean distance between colours in
+CIELAB space, so that Mean Perceptual Distance is the mean distance
+between all pairs of colours in a sub-palette.
+
+Currently the maximization is done using a brute force approach,
+suitable for reasonably sized input palettes, which simply generates a
+large number of random palettes, calculated MPD, and then returns the
+palette with the higher MPD.
+
+Here is the function:
+
+<script src="https://gist.github.com/rdinnager/da324a55c6c5bb7703fd.js"></script>
+
+Now let's try it out! First I extract a largish palette using Jo-fai
+Chow's function (256 colours to start).
+
+    ## For now my function is in my own fork of woobe's rPlotter repository
+    library(devtools)  
+    install_github("rdinnager/rPlotter")
+    library(rPlotter)
+    bigpal <- extract_colours("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg", 256, 200)
+    ## get 5 best  10 colour palettes for MPD
+    newpal <- mpd_select_colours(bigpal, sat.thresh = 0.25, dark.thresh = 0.1 , ncolours = 6, nreturn = 5)
+    ## plot palettes
+    spider <- readImage("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg")
+    h <- split.screen(c(1,2))
+    par(mar = c(0,0,0,0)) # set zero margins on all 4 sides
+    plot(x = NULL, y = NULL, xlim = c(0,1500), ylim = c(0,1500), pch = '',
+        xaxt = 'n', yaxt = 'n', xlab = '', ylab = '', xaxs = 'i', yaxs = 'i',
+            bty = 'n', asp=1) # plot empty figure
+    rasterImage(spider, xleft = 0, ybottom = 0, xright = 1500, ytop = 1500) # plot jpeg
+    screen(2)
+    par(mar=c(0,0,0,0))
+    h <- split.screen(c(5,1))
+    for (i in 1:length(newpal)) {
+      screen(2+i)
+      pie(rep(1, 6), col = newpal[[i]])
+    }
+
+![plot of chunk
+examples](R_Colours_files/figure-markdown_strict/examples.png)
+
+    close.screen(all.screens=TRUE)
+
+Here are a few more examples, starting with a photo taken (by my wife:
+Anna Simonsen) during my field work in the Kimberley. And then something
+a bit more pop culturey :).
+
+![plot of chunk examples
+2](R_Colours_files/figure-markdown_strict/examples_21.png) ![plot of
+chunk examples
+2](R_Colours_files/figure-markdown_strict/examples_22.png)
+
+Future Directions
+-----------------
+
+Some cool things to try next:
+
+-   Take into account colour-blind friendly colours.
+-   Maximize MPD using a more elegant approach. Perhaps numerical
+    optimization. I have considered actually simulating competition
+    amongst colours, treating them as species whose similarity in colour
+    components determines their competition coefficients. Basically
+    running a [Lotka-Volterra competition
+    model](en.wikipedia.org/wiki/Competitive_Lotka–Volterra_equations)
+    until the number of 'surviving' colours equals the desired number of
+    colours. This should be pretty easy to do. Look for another post on
+    this soon.
+-   Utilize information on the abundance of different colours in the
+    image. The MPD metric in ecology can be abundance-weighted, so that
+    very abundant colours can contribute more to the mean distance than
+    rarer colours.
+
+In part 2, I will look at ways to try and extract a gradient of colour
+from an image.
+
+References
+----------
+
+Webb, CO. 2000. “Exploring the Phylogenetic Structure of Ecological
+Communities: An Example for Rain Forest Trees.” *The American
+Naturalist* 156 (2) (August): 145–155.
+doi:[10.1086/303378](http://dx.doi.org/10.1086/303378).
+<http://www.jstor.org/stable/10.1086/303378>.
