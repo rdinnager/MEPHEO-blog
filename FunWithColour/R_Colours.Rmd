@@ -6,9 +6,9 @@ output:
 
 It used to be that I would make all my figures in black and white. It was just simpler that way, since most print journals charged extra money to print colour figures, and I did not have any money to spare. But with the move in science publishing from mainly print journals to mainly online (rich) content, colour is no longer a restriction for scientific figure. This is good news because colour can not only make your figures look great, they can help you pack more information into a scientific visualization. But the opposite side of this coin is that if colours are badly chosen, they can make your figure much much worse. This then leads to the question I used to not have to answer: what colours should I use?
 
-I have found several R packages really useful in this regard. `RColorBrewer` is a great package which has a small number of palettes to choose from, but all of them are pre-selected so that their colours will look good together. Recently I have become a fan of the`wesanderson` package by Karthik Ram, which makes available palettes drawn from the wonderfully quirky film canon of the director Wes Anderson. Want you figure to conjure the feeling of "Fantastic Mister Fox"? Or a my personal favourite: "Rushmore" (does that age me?). Just install `wesanderson` and grab the palette!
+I have found several R packages really useful in this regard. `RColorBrewer` is a great package which has a small number of palettes to choose from, but all of them are pre-selected so that their colours will look good together. Recently I have become a fan of the`wesanderson` package by Karthik Ram, which makes available palettes drawn from the wonderfully quirky film canon of the director Wes Anderson. Want your figure to conjure the feeling of "Fantastic Mister Fox"? Or a my personal favourite: "Rushmore" (does that age me?). Just install `wesanderson` and grab the palette! Jo-Fai Chowalso  has an excellent [blog post](http://blenditbayes.blogspot.co.uk/2014/05/towards-yet-another-r-colour-palette.html) with links to more interesting color packages, some of which I have not checked out yet.
 
-But what if I want to get colours that are inspied by any arbitray image I like, or a non-arbitrary image that may be related to the subject of the figure? I started thinking about this when I had an exchange on twitter with Jo-fai Chow and Karthik Ram, e.g.
+But what if I want to get colours that are inspied by any arbitrary image I like, or a non-arbitrary image that may be related to the subject of the figure? I started thinking about this when I had an exchange on twitter with Jo-fai Chow and Karthik Ram, e.g.
 
 <blockquote class="twitter-tweet" data-conversation="none" lang="en"><p><a href="https://twitter.com/_inundata">@_inundata</a> <a href="https://twitter.com/ecologician">@ecologician</a> I&#39;ve been thinking abt a func that loads an img, extracts main colours and arranges them based on colour theory</p>&mdash; Jo-fai Chow (@matlabulous) <a href="https://twitter.com/matlabulous/statuses/469016511517302784">May 21, 2014</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
@@ -97,7 +97,9 @@ There is generally two types of palettes we might want to use in a scientific fi
 * A palette of contrasting colours, to effectively distinguish between different classes
 * A palette consisting of a colour gradient, to effectively represent differing levels of a continuous variable
 
-In this post, I am mostly going to play around with ideas about how to get palette of the first kind from an image of something such as our little spider friend above. As already mentioned Jo-Fai Chow has already made a function that uses one technique for doing this. Let's try using that on Mr. Peacock:
+In this post, I am mostly going to play around with ideas about how to get palette of the first kind from an image of something such as our little spider friend above. The second kind I will cover in a subsequent blog post.
+
+As already mentioned Jo-Fai Chow has already made a function that uses one technique for doing this. Let's try using that on Mr. Peacock:
 
 ```{r rPlotter, cache=TRUE, message=FALSE, warning=FALSE}
 ## install Jo-Fai Chow's package
@@ -116,7 +118,7 @@ Jo-Fai Chow's method uses k-means clustering to extract a colour palette. This w
 
 Seeing this method of colour clustering got me thinking about another interesting ways to choose colours from an image. Another major method for clustering is known as "heirarchical clustering", which does not just split the data into _k_ groups but splits the data into an heirarchy of clusters, which can be visualized as a tree. The most similar colours are joined at the tips of the trees, and as you move from the tips to the root, the colours are joined into more inclusive groups. My idea is to apply some methods adapted from the community phylogenetics field (my own field of ecology) to this "colour-tree". First, let's make the colour tree and see what it looks like!
 
-```{r colour clustering, cache=TRUE, warning=FALSE, message=FALSE}
+```{r colour clustering 1, cache=TRUE, warning=FALSE, message=FALSE}
 library(fastcluster)
 library(ape)
 ## generate a distance matrix from all remaining colours (note: with rsize = 100, this creates a matrix with 38,715,600 elements which takes up about 300mb, be careful if using even greater rsize!)
@@ -127,8 +129,13 @@ col_clust<-hclust(col_dists, "average")
 col_tree<-as.phylo(col_clust)
 ## plot tree!
 par(mfrow = c(1,1))
-col_tree$tip.label <- rep("-----", length(col_tree$tip.label))
-plot(col_tree, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red))
+col_tree$tip.label <- rep("_______", length(col_tree$tip.label))
+plot(col_tree, show.tip.label=TRUE, type ="fan", no.margin=FALSE, tip.color=rgb(spider.cols.red), underscore=TRUE, cex=1.5)
+```
+
+I think the heirarchical clustering causes issues because it forces the resulting distances to be ultrametric (every tree-tip is an equal distance from the tree-root), which probably does not represent colours very well. Instead, let's try neighbour-joining, which simply creates a tree by joining nearest neighbours. 
+
+```{r colour clustering 2, cache=TRUE, warning=FALSE, message=FALSE}
 ## try using neighbour-joining: this takes much longer!
 col_tree2 <- nj(col_dists)
 col_tree2$tip.label <- rep("-----", length(col_tree2$tip.label))
@@ -138,7 +145,9 @@ plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 ```
 
-```{r colourspace, cache=TRUE, message=FALSE,warning= FALSE}
+Looks good! But we immediately start to see a problem by visualizing the colours like this.
+
+```{r colourspace, cache=TRUE, message=FALSE, warning=FALSE}
 library(colorspace)
 spider.cols.LAB <- as(RGB(as.matrix(spider.cols.red)), "LAB")
 spider.cols.LAB <- as.data.frame(coords(spider.cols.LAB))
@@ -148,14 +157,16 @@ col_tree_LAB <- nj(col_dists_LAB)
 col_tree_LAB$tip.label <- rep("_________", length(col_tree_LAB$tip.label))
 plot(col_tree_LAB, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red),
      underscore=TRUE)
-plot(col_tree_LAB, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
-tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+## compare with RGB
 
-spider.cols.LUV <- as(RGB(as.matrix(spider.cols.red)), "LUV")
-spider.cols.LUV <- as.data.frame(coords(spider.cols.LUV))
-cloud(L~U*V, spider.cols.LUV, pch=19, col=rownames(spider.cols.LUV), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
-col_dists_LUV <- dist(spider.cols.LUV)
+par(mfrow = c(1,2), mar=c(2,2,2,2))
+plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=FALSE, main = "RGB")
+tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+plot(col_tree_LAB, show.tip.label=FALSE, type ="unrooted", no.margin=FALSE, main = "L*A*B*")
+tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
+par(mfrow = c(1,1))
 ```
+
 
 
 ```{r find colours, cache=TRUE, message=FALSE, warning=FALSE}
@@ -167,5 +178,18 @@ colnames(col_samp) <- rownames(spider.cols.LUV)
 col_mpd <- mpd(col_samp, as.matrix(col_dists_LUV))
 col_best <- colnames(col_samp)[col_samp[which.max(col_mpd),]==1]
 pie(rep(1, ncolours), col = col_best, main = "Palette based on Peacock Spider")
+```
+
+```{r testing, cache=TRUE, eval=FALSE}
+spider.cols.LUV <- as(RGB(as.matrix(spider.cols.red)), "LUV")
+spider.cols.LUV <- as.data.frame(coords(spider.cols.LUV))
+cloud(L~U*V, spider.cols.LUV, pch=19, col=rownames(spider.cols.LUV), screen=list(z=-45,x=-60), perspective=TRUE, scales = list(col = "black"), par.settings = list(axis.line = list(col = "transparent")))
+col_dists_LUV <- dist(spider.cols.LUV)
+col_tree_LUV <- nj(col_dists_LUV)
+col_tree_LUV$tip.label <- rep("_________", length(col_tree_LUV$tip.label))
+plot(col_tree_LUV, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red),
+     underscore=TRUE)
+plot(col_tree_LUV, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
+tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 ```
 
