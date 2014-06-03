@@ -145,7 +145,7 @@ plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=TRUE)
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 ```
 
-Looks good! But we immediately start to see a problem by visualizing the colours like this.
+Looks good! But we immediately start to see a problem by visualizing the colours like this. For one, the blueish colours have large branch-lengths, yet they appear to all be very similar, at least to my eye. It turns out that human colour perception is quite biased with regards to certain hues. For example blue hues are difficult to distinguish by eye, such that some colours that are very different in RGB space can appear quite similar. On the other hand, red and orangish hues can appear quite different, despite being very close in RGB space. To account for this, other colorspaces have been developed which attempt to get closer to how humans percieve colours. An example of this is the [CIELAB](http://en.wikipedia.org/wiki/Lab_color_space) colorspace, or L\*A\*B\* for short. This space consists of three dimensions. The first, known as __L\*__ corresponds to luminosity, and is a very good measure of how humans percieved light cs. dark. __L\*__ ranges between 0 and 100, with high values being light colours. The other two elements are __a\*__ and __b\*__, which are the position of the colour on the red/magenta to green scale (-100 to 100), and the blue to yellow scale (-100 to 100), respectively. I therefore decided to transform the image's colours to CIELAB space using the `colorspace` package before analyzing further:
 
 ```{r colourspace, cache=TRUE, message=FALSE, warning=FALSE}
 library(colorspace)
@@ -158,7 +158,6 @@ col_tree_LAB$tip.label <- rep("_________", length(col_tree_LAB$tip.label))
 plot(col_tree_LAB, show.tip.label=TRUE, type ="fan", no.margin=TRUE, tip.color=rgb(spider.cols.red),
      underscore=TRUE)
 ## compare with RGB
-
 par(mfrow = c(1,2), mar=c(2,2,2,2))
 plot(col_tree2, show.tip.label=FALSE, type ="unrooted", no.margin=FALSE, main = "RGB")
 tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
@@ -167,7 +166,7 @@ tiplabels(pch=19, col = rgb(spider.cols.red), cex=0.7)
 par(mfrow = c(1,1))
 ```
 
-
+In the new colorspace, we can see that the blue hues now take up a much smaller volume, reflecting human's poor ability to distinguish these hues. On the other hand the red and orange hues have expanded to fill more space.
 
 ```{r find colours, cache=TRUE, message=FALSE, warning=FALSE}
 library(picante)
