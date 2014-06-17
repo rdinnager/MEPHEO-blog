@@ -3,6 +3,7 @@ library(colorspace)
 library(tidyr)
 library(dplyr)
 library(magrittr)
+library(ggplot2)
 
 img <- readImage("http://upload.wikimedia.org/wikipedia/commons/5/53/MalePeacockSpider.jpg")
 
@@ -15,49 +16,58 @@ xycoords$X <- xycoords$X %>% as.character %>% as.integer
 ## convert to LAB space
 img_tree <- xycoords$colour %>% hex2RGB(gamma=TRUE) %>% as("LAB") %>% coords %>% data.frame %>% 
   cbind(xycoords %>% select(X, Y)) %>% gather(element, value, L, A, B) %>% 
-  cbind(colour = as.vector(test), stringsAsFactors = FALSE) %>% tbl_df %>% mutate(split = 1)
-rownames(img_tree) <- seq_len(nrow(img_tree))
+  cbind(colour = as.vector(test), stringsAsFactors = FALSE) %>% tbl_df %>% mutate(split = 1, row_n = seq_len(nrow(img_tree))) %>%
+  group_by(element) %>% mutate(mean.col = mean(value))  %>% ungroup
+#rownames(img_tree) <- seq_len(nrow(img_tree))
 
-sub_rows <- c(seq_len(nrow(img_tree)))
+sub_img <- img_tree[c(seq_len(nrow(img_tree))),]
+sub_rows <- sub_img$row_n
 
-ifelse(img_tree$X < width, ifelse(img_tree$Y < height, div_facts[1], div_facts[3]), ifelse(img_tree$Y < height, div_facts[2], div_facts[4]))
+#ifelse(img_tree$X < width, ifelse(img_tree$Y < height, div_facts[1], div_facts[3]), ifelse(img_tree$Y < height, div_facts[2], div_facts[4]))
 
-iters <- 5
+iters <- 1000
 last_fact <- 0
 
 i <- 1
 
 for (i in 1:iters) {
+  ## convert img_tree dataframe into a series of plottable rectangles
+  img_rect <- img_tree %>% group_by(split) %>% summarise(xmin = min(X), xmax = max(X), ymin = min(Y), ymax = max(Y))
+  img_cols <- img_tree %>% select(X, Y, split, element, mean.col) %>% group_by(element, split) %>% 
+    summarise(mean.col = mean(mean.col)) %>% spread(element, mean.col) %>% mutate(hex.col = LAB(L, A, B) %>% hex(fixup = TRUE)) %>%
+    select(split, hex.col)  
+  img_rect <- left_join(img_rect, img_cols)
+  p <- ggplot(img_rect, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = factor(split))) + geom_rect() + 
+    scale_fill_manual(values=img_rect$hex.col) + theme(legend.position="none")
+  print(p)
+  Sys.sleep(0)
   step_name <- paste("Step_", i, sep = "")
-  ## divide image
-  div_facts <- (last_fact + 1):(last_fact + 4)
-  last_facts <- last_fact + 4
-  div_x <- floor(width / 2)
-  div_y <- floor(height / 2)
-  img_tree$split <- ifelse(img_tree$X < div_x, ifelse(img_tree$Y < div_y, div_facts[1], div_facts[3]), ifelse(img_tree$Y < div_y, div_facts[2], div_facts[4]))
-  
-  #div_k <- kronecker(matrix(div_facts, 2, byrow = TRUE), matrix(1, div_y, div_x))
-  #if ((width %% 2) != 0) div_k <- div_k %>% cbind(c(rep(2, div_y), rep(4, div_y + 1)))
-  #if ((height %% 2) != 0) div_k <- div_k %>% rbind(c(rep(1, floor(ncol(div_k) / 2)), rep(2, ncol(div_k) / 2)))
-  #div_k <- div_k %>% as.vector %>% rep(3)
-  ## add dividing factor to dataframe
-  #img_tree$split[sub_rows] <- div_k  
-  img_tree2 <- img_tree %>% group_by(element, split)
-  ## calculate mean distance from centroid for each split
-  split_crit <- img_tree2 %>% mutate(std = (value - mean(value))^2) %>% ungroup %>% 
-    select(X, Y, split, element, std) %>% spread(element, std) %>% mutate(errs = sqrt(L + A + B)) %>%
-    group_by(split) %>% summarise(error = mean(errs))
-  best <- split_crit$split[split_crit$error %>% which.max]
-  sub_img <- img_tree2 %>% filter(split == best) 
-  sub_rows <- rownames(sub_img)
   width <- max(sub_img$X) - min(sub_img$X) + 1
   height <- max(sub_img$Y) - min(sub_img$Y) + 1
+  ## divide image
+  div_facts <- (last_fact + 1):(last_fact + 4)
+  last_fact <- last_fact + 4
+  div_x <- width / 2
+  div_y <- height / 2
+  sub_img <- sub_img %>% mutate(X2 = X - min(X) + 1, Y2 = Y - min(Y) + 1, split = ifelse(X2 < div_x, ifelse(Y2 < div_y, div_facts[1], div_facts[3]), 
+                                                     ifelse(Y2 < div_y, div_facts[2], div_facts[4]))) %>% select(-X2, -Y2)    
+  img_tree[sub_rows,] <- sub_img 
+  img_tree <- img_tree %>% group_by(element, split) %>% mutate(mean.col = mean(value))
+  ## calculate mean distance from centroid for each split
+  split_crit <- img_tree %>% mutate(std = (value - median(value))^2) %>% ungroup %>% 
+    select(X, Y, split, element, std) %>% spread(element, std) %>% mutate(errs = sqrt(L + A + B)) %>%
+    group_by(split) %>% summarise(error = sum(errs))
+  best <- split_crit$split[split_crit$error %>% which.max]
+  sub_img <- img_tree %>% filter(split == best) %>% ungroup
+  sub_rows <- sub_img$row_n
+  print(i)
 }
 
-
-if ((nrow(test)%%2)!=0) test <- test[-nrow(test),]
-if ((ncol(test)%%2)!=0) test <- test[,-ncol(test)]
-xsize <- ncol(test) / 2
-ysize <- nrow(test) / 2
-k <- kronecker(matrix(1:4, 2, byrow = TRUE), matrix(1, xsize, ysize))
-tt <- lapply(split(test, k), matrix, nrow=ysize)
+img_rect <- img_tree %>% group_by(split) %>% summarise(xmin = min(X), xmax = max(X), ymin = min(Y), ymax = max(Y))
+img_cols <- img_tree %>% select(X, Y, split, element, mean.col) %>% group_by(element, split) %>% 
+  summarise(mean.col = mean(mean.col)) %>% spread(element, mean.col) %>% mutate(hex.col = LAB(L, A, B) %>% hex(fixup = TRUE)) %>%
+  select(split, hex.col)  
+img_rect <- left_join(img_rect, img_cols)
+p <- ggplot(img_rect, aes(xmin = xmin - 1, xmax = xmax, ymin = ymin - 1 , ymax = ymax, fill = factor(split))) + geom_rect() + 
+  scale_fill_manual(values=img_rect$hex.col) + theme(legend.position="none")
+p
